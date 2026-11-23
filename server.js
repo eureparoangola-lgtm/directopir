@@ -33,11 +33,23 @@ const nms = new NodeMediaServer({
 
 const live = new Map(); // streamKey -> { sessionId, since }
 
+// Block an IP for 15 minutes after 20 wrong stream keys, so short keys can't be guessed.
+const badPublish = new Map(); // ip -> { n, until }
 nms.on('prePublish', (id, streamPath) => {
   const [, app, key] = streamPath.split('/');
   const session = nms.getSession(id);
+  const ip = (session && session.ip) || '?';
+  const now = Date.now();
+  const rec = badPublish.get(ip);
+  if (rec && rec.until > now && rec.n >= 20) {
+    console.log(`[rtmp] blocked ${ip} (too many wrong stream keys)`);
+    return session && session.reject();
+  }
   if (app !== 'live' || !db.findFeedByKey(key)) {
-    console.log(`[rtmp] rejected unknown stream ${streamPath}`);
+    const r = rec && rec.until > now ? rec : { n: 0, until: now + 15 * 60e3 };
+    r.n++;
+    badPublish.set(ip, r);
+    console.log(`[rtmp] rejected unknown stream ${streamPath} from ${ip}`);
     return session && session.reject();
   }
 });

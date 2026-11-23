@@ -10,22 +10,36 @@ DJI remote ──RTMP──▶ :1935 ├─ DroneView ──WebSocket-FLV──�
 ```
 
 ## Features
-- **Admin dashboard** (`/admin`): create rooms, get a unique RTMP URL per drone, see live/offline status, rename feeds,
+- **Dashboard**: log in, create rooms, get a unique RTMP URL per drone, see live/offline status, rename feeds,
   issue a new URL for a slot (disconnects the old one), change the passcode (signs out current viewers), delete rooms.
 - **Share link** `https://your-domain/v/<room>` goes straight to the multi-view page. Viewers enter the passcode once
   (stays valid for 12 h by default) and the grid starts.
 - **Multi-view**: lays itself out to fill the screen, tiles start on their own when a drone goes live and reconnect if the
   signal drops, double-click a tile to enlarge it, per-tile sound, fullscreen, works on phones.
 - **Security**: drones with unknown stream keys are rejected; viewers never see stream keys; the internal media port
-  only accepts short-lived signed requests; passcode and admin login are rate-limited; passcodes are stored as scrypt hashes.
+  only accepts short-lived signed requests; passcodes and logins are rate-limited; passwords and passcodes are stored as scrypt hashes.
 - Link previews (Open Graph) so the link shows a title card in WhatsApp, Slack and similar apps.
+
+## Accounts and subscriptions
+| Role | Can do |
+|---|---|
+| **Admin** (you; login from `ADMIN_USERNAME` / `ADMIN_PASSWORD`) | Everything: all rooms, create collaborator and user accounts, enable/disable a user's streaming with a message, set minute limits (add minutes, reset the counter), set each user's theme and the platform theme, reset passwords, delete accounts |
+| **Collaborator** | Create rooms and share links. No room logos, no theme changes, no minute limit. Sees only their own rooms |
+| **User** (customer) | Create rooms and share links, add room logos, see a dashboard with live-stream minutes used and remaining. Theme set by the admin |
+
+- **Minutes** are counted per live drone: 10 drones live for 1 hour = 600 minutes.
+- **When a user's streaming is off** (disabled by the admin, or minutes used up), their live drones are disconnected
+  right away, new pushes are refused, their dashboard shows the admin's message, and viewers of their rooms see
+  "This live stream is currently unavailable".
+- **Themes**: platform name, optional brand logo, accent colour and background colour. Applied to the user's own
+  pages and to their rooms' passcode and multi-view pages.
 
 ## Run locally
 ```bash
 npm install
 ADMIN_PASSWORD=secret node server.js
 ```
-Open http://localhost:3000/admin. Test without a drone by pushing a fake feed:
+Open http://localhost:3000 and log in as `admin` with that password. Test without a drone by pushing a fake feed:
 ```bash
 ffmpeg -re -f lavfi -i testsrc2=size=1280x720:rate=30 -c:v libx264 -preset veryfast -tune zerolatency -g 60 -f flv rtmp://localhost/live/<stream-key>
 ```
@@ -33,7 +47,7 @@ ffmpeg -re -f lavfi -i testsrc2=size=1280x720:rate=30 -c:v libx264 -preset veryf
 ## Try it in GitHub Codespaces (no install)
 1. On the repo page: **Code → Codespaces → Create codespace on main**. Wait for the setup to finish (2–3 min the first time).
 2. In the terminal at the bottom: `npm start`. A browser tab opens on the app (or use the **Ports** tab → port 3000 → globe icon).
-3. Add `/admin` to the end of that URL, log in with `test1234`, and create a room.
+3. Log in with username `admin` and password `test1234`, and create a room.
 4. Open a **second terminal** (the **+** button) and run `npm run demo`. This pushes 10 fake drone feeds into the room.
 5. Back on the room page, click **Open multi-view** and enter the passcode.
 
@@ -52,7 +66,7 @@ Stop the codespace when you're done so it doesn't use up your free hours.
    cp .env.example .env && nano .env        # set DOMAIN, PUBLIC_URL, RTMP_HOST, ADMIN_PASSWORD
    docker compose up -d --build
    ```
-4. Go to `https://your-domain/admin`, create a room, then copy each RTMP URL into a remote.
+4. Go to `https://your-domain`, log in as `admin`, create a room, then copy each RTMP URL into a remote.
 
 ## Entering the URL on DJI remotes
 | App | Where |
@@ -72,7 +86,8 @@ or media server in front when you expect large audiences.
 ## Config (env vars)
 | Var | Default | |
 |---|---|---|
-| `ADMIN_PASSWORD` | (required) | operator login |
+| `ADMIN_USERNAME` | admin | admin login name |
+| `ADMIN_PASSWORD` | (required) | admin password |
 | `PUBLIC_URL` | request host | base of share links |
 | `RTMP_HOST` | request host | host shown in RTMP URLs |
 | `PORT` / `RTMP_PORT` / `MEDIA_HTTP_PORT` | 3000 / 1935 / 8000 | |

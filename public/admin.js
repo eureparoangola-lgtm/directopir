@@ -41,13 +41,13 @@
   });
 
   async function api(feedId, body) {
-    const res = await fetch(`/admin/api/rooms/${roomId}/feeds/${feedId}`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(body) });
+    const res = await fetch(`/api/rooms/${roomId}/feeds/${feedId}`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(body) });
     return res.json();
   }
 
   async function poll() {
     try {
-      const { feeds } = await (await fetch(`/admin/api/rooms/${roomId}/status`)).json();
+      const { feeds } = await (await fetch(`/api/rooms/${roomId}/status`)).json();
       feeds.forEach((f) => {
         const el = document.querySelector(`tr[data-feed="${f.id}"] [data-status]`);
         if (!el) return;
@@ -57,4 +57,23 @@
     } catch (_) {}
   }
   if (roomId) setInterval(poll, 3000);
+
+  // User dashboard: keep the minutes counter current.
+  const usageCard = document.querySelector('[data-usage]');
+  async function pollUsage() {
+    try {
+      const u = await (await fetch('/api/me/usage', { cache: 'no-store' })).json();
+      const fmt = (n) => Number(n).toLocaleString('en-US');
+      usageCard.querySelector('[data-used]').textContent = fmt(u.usedMinutes);
+      usageCard.querySelector('[data-live]').textContent = u.liveFeeds;
+      if (u.limitMinutes != null) {
+        usageCard.querySelector('[data-remaining]').textContent = fmt(Math.max(0, u.limitMinutes - u.usedMinutes));
+        const m = usageCard.querySelector('[data-meter]');
+        const pct = Math.min(100, Math.round((u.usedMinutes / u.limitMinutes) * 100));
+        if (m) { m.style.width = pct + '%'; m.classList.toggle('warn', pct >= 90); }
+      }
+      if (!!u.block !== !!document.querySelector('.banner')) location.reload(); // paused or resumed
+    } catch (_) {}
+  }
+  if (usageCard) setInterval(pollUsage, 15000);
 })();

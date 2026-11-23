@@ -101,6 +101,7 @@
       const res = await fetch(`/api/v/${encodeURIComponent(slug)}/status`, { cache: 'no-store' });
       if (res.status === 401) return location.reload(); // passcode changed / session expired
       const data = await res.json();
+      if (data.unavailable) return location.reload(); // owner's streaming was paused
       let n = 0;
       data.feeds.forEach((f) => {
         const t = tiles.get(f.id);

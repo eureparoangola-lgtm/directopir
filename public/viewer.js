@@ -1,5 +1,5 @@
 (function () {
-  const { slug, feeds } = window.DV;
+  const { slug, feeds, logo } = window.DV;
   const grid = document.getElementById('grid');
   const tiles = new Map(); // feedId -> { el, video, player, live }
   let focused = null;
@@ -20,6 +20,11 @@
         <button data-act="focus" title="Enlarge">⤢</button>
       </div>`;
     el.querySelector('.name').textContent = f.label;
+    if (logo) {
+      const img = document.createElement('img');
+      img.className = 'tile-logo'; img.src = logo; img.alt = '';
+      el.appendChild(img);
+    }
     grid.appendChild(el);
     tiles.set(f.id, { el, video: el.querySelector('video'), player: null, live: false, label: f.label });
     el.addEventListener('dblclick', () => toggleFocus(f.id));

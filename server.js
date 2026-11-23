@@ -114,7 +114,7 @@ function tooManyAttempts(key) {
 const app = express();
 app.set('trust proxy', true);
 app.disable('x-powered-by');
-app.use(express.urlencoded({ extended: false }));
+app.use(express.urlencoded({ extended: false, limit: '3mb' })); // room forms can carry a base64 logo
 app.use(express.json());
 app.use('/static', express.static(path.join(__dirname, 'public'), { maxAge: '1h' }));
 app.get('/static/mpegts.js', (req, res) => res.sendFile(require.resolve('mpegts.js/dist/mpegts.js')));
@@ -149,18 +149,22 @@ app.post('/admin/rooms', requireAdmin, (req, res) => {
   const { name, passcode, feedCount } = req.body;
   if (!name || !passcode || String(passcode).length < 4) return res.status(400).send('Name and a passcode of 4+ characters are required.');
   const room = db.createRoom({ name, passcode, feedCount });
-  res.redirect(`/admin/rooms/${room.id}`);
+  const err = req.body.logo ? db.setLogo(room, req.body.logo) : null;
+  res.redirect(`/admin/rooms/${room.id}${err ? `?error=${encodeURIComponent(err)}` : ''}`);
 });
 app.get('/admin/rooms/:id', requireAdmin, (req, res) => {
   const room = db.getRoom(req.params.id);
   if (!room) return res.status(404).send('Not found');
-  res.send(pages.adminRoom(room, live, baseUrl(req), rtmpBase(req)));
+  res.send(pages.adminRoom(room, live, baseUrl(req), rtmpBase(req), req.query.error));
 });
 app.post('/admin/rooms/:id/settings', requireAdmin, (req, res) => {
   const room = db.getRoom(req.params.id);
   if (!room) return res.status(404).send('Not found');
   db.updateRoom(room, { name: req.body.name, passcode: req.body.passcode });
-  res.redirect(`/admin/rooms/${room.id}`);
+  let err = null;
+  if (req.body.removeLogo) db.removeLogo(room);
+  else if (req.body.logo) err = db.setLogo(room, req.body.logo);
+  res.redirect(`/admin/rooms/${room.id}${err ? `?error=${encodeURIComponent(err)}` : ''}`);
 });
 app.post('/admin/rooms/:id/delete', requireAdmin, (req, res) => {
   const room = db.getRoom(req.params.id);
@@ -177,6 +181,13 @@ app.post('/admin/api/rooms/:id/feeds/:feedId', requireAdmin, (req, res) => {
 });
 
 // --- Viewer ---
+// Room logo (not secret: it is also shown on the passcode screen).
+app.get('/logo/:slug.png', (req, res) => {
+  const room = db.getRoomBySlug(req.params.slug);
+  if (!room || !room.logo) return res.sendStatus(404);
+  res.set('Cache-Control', 'public, max-age=86400').sendFile(db.logoPath(room));
+});
+
 function roomStatus(room) {
   return room.feeds.map((f) => ({ id: f.id, label: f.label, live: live.has(f.key), since: live.get(f.key)?.since || null }));
 }

@@ -412,6 +412,10 @@ function handleUpgrade(req, socket, head) {
 
 const server = app.listen(PORT, () => {
   console.log(`DroneView web on http://localhost:${PORT}  (log in as "${ADMIN_USERNAME}")`);
+  if (process.env.CODESPACE_NAME) {
+    const domain = process.env.GITHUB_CODESPACES_PORT_FORWARDING_DOMAIN || 'app.github.dev';
+    console.log(`Open in your browser: https://${process.env.CODESPACE_NAME}-${PORT}.${domain}`);
+  }
   console.log(`RTMP ingest on port ${RTMP_PORT}`);
 });
 server.on('upgrade', handleUpgrade);

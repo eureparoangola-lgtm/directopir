@@ -49,6 +49,9 @@ ffmpeg -re -f lavfi -i testsrc2=size=1280x720:rate=30 -c:v libx264 -preset veryf
 2. In the terminal at the bottom: `npm start`. A browser tab opens on the app (or use the **Ports** tab → port 3000 → globe icon).
 3. Log in with username `admin` and password `test1234`, and create a room.
 4. Open a **second terminal** (the **+** button) and run `npm run demo`. This pushes 10 fake drone feeds into the room.
+   To use **real recorded drone footage** instead: drag a video from the drone's SD card into the file list on the
+   left, then run `npm run demo -- --file DJI_0001.MP4` (use your file's name; repeat `--file` for several videos).
+   It is converted once to a browser-friendly format, then loops in every feed.
 5. Back on the room page, click **Open multi-view** and enter the passcode.
 
 Codespaces only forwards web traffic, so **real DJI remotes cannot connect to a codespace** (RTMP port 1935 stays

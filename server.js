@@ -119,7 +119,9 @@ app.use(express.json());
 app.use('/static', express.static(path.join(__dirname, 'public'), { maxAge: '1h' }));
 app.get('/static/mpegts.js', (req, res) => res.sendFile(require.resolve('mpegts.js/dist/mpegts.js')));
 
-const baseUrl = (req) => PUBLIC_URL || `${req.protocol}://${req.get('host')}`;
+// Behind a proxy (Codespaces, Caddy, nginx) the real public address is in X-Forwarded-Host, not Host.
+const publicHost = (req) => (req.get('x-forwarded-host') || req.get('host') || '').split(',')[0].trim();
+const baseUrl = (req) => PUBLIC_URL || `${req.protocol}://${publicHost(req)}`;
 const rtmpBase = (req) => `rtmp://${RTMP_HOST || req.hostname}${RTMP_PORT === 1935 ? '' : ':' + RTMP_PORT}/live`;
 
 function requireAdmin(req, res, next) {

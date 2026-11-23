@@ -1,0 +1,12 @@
+{
+  "name": "DroneView",
+  "image": "mcr.microsoft.com/devcontainers/javascript-node:1-22-bookworm",
+  "postCreateCommand": "sudo apt-get update && sudo apt-get install -y ffmpeg && npm install",
+  "containerEnv": { "ADMIN_PASSWORD": "test1234" },
+  "forwardPorts": [3000],
+  "portsAttributes": {
+    "3000": { "label": "DroneView", "onAutoForward": "openBrowser" },
+    "1935": { "label": "RTMP (internal only)", "onAutoForward": "silent" },
+    "8000": { "label": "Media (internal only)", "onAutoForward": "silent" }
+  }
+}

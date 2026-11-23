@@ -30,6 +30,18 @@ Open http://localhost:3000/admin. Test without a drone by pushing a fake feed:
 ffmpeg -re -f lavfi -i testsrc2=size=1280x720:rate=30 -c:v libx264 -preset veryfast -tune zerolatency -g 60 -f flv rtmp://localhost/live/<stream-key>
 ```
 
+## Try it in GitHub Codespaces (no install)
+1. On the repo page: **Code → Codespaces → Create codespace on main**. Wait for the setup to finish (2–3 min the first time).
+2. In the terminal at the bottom: `npm start`. A browser tab opens on the app (or use the **Ports** tab → port 3000 → globe icon).
+3. Add `/admin` to the end of that URL, log in with `test1234`, and create a room.
+4. Open a **second terminal** (the **+** button) and run `npm run demo`. This pushes 10 fake drone feeds into the room.
+5. Back on the room page, click **Open multi-view** and enter the passcode.
+
+Codespaces only forwards web traffic, so **real DJI remotes cannot connect to a codespace** (RTMP port 1935 stays
+private). Use it to try the pages. For real drones, run it on your computer (same Wi-Fi as the remote) or on a server.
+To let someone else open the share link, set port 3000 to **Public** in the Ports tab (right-click → Port Visibility).
+Stop the codespace when you're done so it doesn't use up your free hours.
+
 ## Deploy (VPS + Docker, HTTPS included)
 1. Get a VPS (Ubuntu 24.04, 4 vCPU / 8 GB is plenty; **bandwidth is what matters**, see below) and a domain.
    Point the domain's DNS A record at the server.
